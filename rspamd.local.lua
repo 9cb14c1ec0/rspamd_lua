@@ -39,7 +39,8 @@ rspamd_config.PHISH001 = {
         lower_content:find("The fact is that you were infected with") or
         lower_content:find("formula2107@outlook.com") or
         lower_content:find("lvrzdign.php") or
-        lower_content:find("activatefixmail.com"))
+        lower_content:find("activatefixmail.com") or
+        lower_content:find("is due for validation.<br>"))
   end,
   score = 15.0,
   description = 'phish 001',
