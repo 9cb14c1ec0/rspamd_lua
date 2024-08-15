@@ -41,7 +41,8 @@ rspamd_config.PHISH001 = {
         lower_content:find("lvrzdign.php") or
         lower_content:find("activatefixmail.com") or
         lower_content:find("is due for validation.<br>") or
-        lower_content:find("my perverted friend."))
+        lower_content:find("my perverted friend.") or
+        lower_content:find("linkmasters.ru"))
   end,
   score = 15.0,
   description = 'phish 001',
