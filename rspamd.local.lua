@@ -1,37 +1,37 @@
-spamd_config.NORTON_LIFELOCK = {
-  callback = function(task)
-     local lower_content = task:get_content():lower()
-     if (lower_content:find("norton") and
-        lower_content:find("lifelock") and
-        lower_content:find("bank")) then
-        return true
-     else
-        return false
-     end
-  end,
-  score = 15.0,
-  description = 'norton lifelock spam',
-}
+-- custom_filter.lua
+local rspamd_config = require "rspamd_config"
 
-rspamd_config.DOCUSIGN_PHISH = {
-  callback = function(task)
-     local lower_content = task:get_content():lower()
+local function check_norton_lifelock(task)
+    local has_norton = false
+    local has_lifelock = false
+
+    -- Check for "Norton" in the email content
+    if task:get_content():lower():find("norton") then
+        has_norton = true
+    end
+
+    -- Check for "LifeLock" in the email content
+    if task:get_content():lower():find("lifelock") then
+        has_lifelock = true
+    end
+
+    if has_norton and has_lifelock then
+        task:insert_result('BLOCK_NORTON_LIFELOCK', 1.0)
+    end
+end
+
+local function check_docusign_phish(task)
+    local lower_content = task:get_content():lower()
      if (lower_content:find("review=20pending=20document") or
          lower_content:find("kindly=20complete=20electronic") )then
-        return true
-     else
-        return false
+        task:insert_result('DOCUSIGN_PHISH', 1.0)
      end
-  end,
-  score = 15.0,
-  description = 'docusign phish',
-}
 
+end
 
-rspamd_config.PHISH001 = {
-  callback = function(task)
-     local lower_content = task:get_content():lower()
-     return (lower_content:find("By making this reference easily accessible to you, we will") or
+local function other_phishing(task)
+    local lower_content = task:get_content():lower()
+    local is_phish = (lower_content:find("By making this reference easily accessible to you, we will") or
         lower_content:find("80dc0-913b-4635-bf4e-0545a591849b") or
         lower_content:find("<html><body><div>Thank YOU.<br>") or
         lower_content:find("I also have full Ð°ccess to your account.") or
@@ -44,7 +44,64 @@ rspamd_config.PHISH001 = {
         lower_content:find("my perverted friend.") or
         lower_content:find("linkmasters.ru") or  
         lower_content:find("<html><body><div>Order Confirmed."))
-  end,
-  score = 15.0,
-  description = 'phish 001',
-}
+    if is_phish then
+        task:insert_result('OTHER_PHISH', 1.0)
+    end
+end
+
+local function check_other_spam(task)
+    local is_spam = false
+
+    if task:get_content():lower():find("casino leads") then
+        is_spam = true
+    end
+
+    if task:get_content():lower():find("forex leads") then
+        is_spam = true
+    end
+
+    if task:get_content():lower():find("pharma leads") then
+        is_spam = true
+    end
+
+    if task:get_content():lower():find("you have won") then
+        is_spam = true
+    end
+
+    if is_spam then
+        task:insert_result('BLOCK_OTHER_SPAM', 1.0)
+    end
+end
+
+
+rspamd_config:register_symbol({
+    name = 'DOCUSIGN_PHISH',
+    score = 10.0,
+    callback = check_docusign_phish,
+    description = 'Docusign Phishing',
+    group = 'custom'
+})
+
+rspamd_config:register_symbol({
+    name = 'OTHER_PHISH',
+    score = 10.0,
+    callback = other_phishing,
+    description = 'Other Phishing',
+    group = 'custom'
+})
+
+rspamd_config:register_symbol({
+    name = 'BLOCK_NORTON_LIFELOCK',
+    score = 10.0,
+    callback = check_norton_lifelock,
+    description = 'Block emails mentioning Norton LifeLock',
+    group = 'custom'
+})
+
+rspamd_config:register_symbol({
+    name = 'BLOCK_OTHER_SPAM',
+    score = 10.0,
+    callback = check_other_spam,
+    description = 'Block spam emails',
+    group = 'custom'
+})
